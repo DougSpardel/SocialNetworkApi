@@ -4,12 +4,11 @@ const { Thought, User } = require('../../models');
 // Get all thoughts
 router.get('/', async (req, res) => {
   try {
-    const thoughtData = await Thought.find({})
-      .populate('reactions')
-      .populate('username');
+    const thoughtData = await Thought.find({});
     res.json(thoughtData);
   } catch (err) {
-    res.status(500).json(err);
+    console.error(err);
+    res.status(500).json({ message: 'Error fetching thoughts', error: err });
   }
 });
 
@@ -33,14 +32,22 @@ router.get('/:id', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const thoughtData = await Thought.create(req.body);
-    await User.findByIdAndUpdate(
+    const userUpdate = await User.findByIdAndUpdate(
       req.body.userId,
       { $push: { thoughts: thoughtData._id } },
       { new: true }
     );
+
+    if (!userUpdate) {
+      await Thought.findByIdAndRemove(thoughtData._id); // Rollback thought creation if user not found
+      res.status(404).json({ message: 'User not found with this id!' });
+      return;
+    }
+
     res.status(200).json(thoughtData);
   } catch (err) {
-    res.status(400).json(err);
+    console.error(err);
+    res.status(400).json({ message: 'Error creating thought', error: err });
   }
 });
 

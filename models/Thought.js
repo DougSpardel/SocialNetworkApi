@@ -11,10 +11,15 @@ const ThoughtSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now,
-    get: timestamp => dateFormat(timestamp),
+    get: timestamp => new Date(timestamp).toLocaleString(), // Updated line
   },
   username: {
     type: String,
+    required: true,
+  },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
     required: true,
   },
   reactions: [reactionSchema],
